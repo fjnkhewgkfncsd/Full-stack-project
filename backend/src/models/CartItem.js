@@ -29,25 +29,19 @@ const CartItem = Sequelize.define('CartItem', {
     quantity: {
         type: DataTypes.INTEGER,
         defaultValue: 1,
-        allowNull: false
+        allowNull: false,
+        field: 'quantity'
+    },
+    size : {
+        type : DataTypes.ENUM('S', 'M', 'L', 'XL', 'XXL', 'XXXL'),
+        allowNull: false,
+        field: 'size'
     }
-}, {
+}, 
+{
     tableName: 'cart_items',
-    timestamps: false,
+    timestamps: true,
     underscored: true
 });
-
-// Define associations
-CartItem.associate = (models) => {
-    CartItem.belongsTo(models.Cart, {
-        foreignKey: 'cartId',
-        as: 'cart'
-    });
-    
-    CartItem.belongsTo(models.Product, {
-        foreignKey: 'productId',
-        as: 'product'
-    });
-};
 
 export default CartItem;

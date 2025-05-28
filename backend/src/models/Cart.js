@@ -18,14 +18,9 @@ const Cart = Sequelize.define('Cart', {
         },
         unique: true // As per your SQL schema
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: Sequelize.NOW,
-        field: 'created_at'
-    }
 }, {
     tableName: 'cart', // Explicitly set the table name
-    timestamps: false, // We're manually handling the created_at field
+    timestamps: true, // We're manually handling the created_at field
     underscored: true // If you want Sequelize to automatically map camelCase to snake_case
 });
 

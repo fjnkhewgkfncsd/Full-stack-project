@@ -1,22 +1,39 @@
-const db = require('./db');
+import {Cart, CartItem, product, ProductSize} from '../models/main.js' 
 
 // Fetch current user's cart with items
 const getCart = async (req, res) => {
-  const userId = req.user.userId;
+  const Id = req.user.userId;
   try {
-    let cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
-    if (cart.rows.length === 0) {
-      await db.query('INSERT INTO cart(user_id) VALUES ($1)', [userId]);
-      cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
+    const cart = await Cart.findAll(
+      {
+        attributes : {
+          exclude : ['createdAt', 'updatedAt']
+        },
+        where : {userId : Id},
+        include : [
+          {
+            model : CartItem,
+            as : 'items',
+            attributes: { 
+            exclude: ['createdAt', 'updatedAt']
+          },
+            include : [
+              {
+                model : product,
+                as : 'products',
+                attributes: {
+                  exclude : ['createdAt', 'updatedAt','description', 'categoryId']
+                }
+              }
+            ]
+          }
+        ]
+      }
+    );
+    if(cart.length === 0){
+      return res.status(404).json({ message: 'Cart not found' });
     }
-    const cartId = cart.rows[0].cart_id;
-    const items = await db.query(`
-      SELECT ci.cart_item_id, ci.quantity, p.product_id, p.name, p.price, p.image_url
-      FROM cart_items ci
-      JOIN products p ON ci.product_id = p.product_id
-      WHERE ci.cart_id = $1
-    `, [cartId]);
-    res.json({ cartId, items: items.rows });
+    res.json({ cart });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error fetching cart' });
@@ -25,32 +42,33 @@ const getCart = async (req, res) => {
 
 // Add item to cart
 const addToCart = async (req, res) => {
-  const userId = req.user.userId;
-  const { productId, quantity } = req.body;
+  const id = req.user.userId;
+  const { productId, quantity ,size} = req.body;
   try {
-    let cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
-    if (cart.rows.length === 0) {
-      await db.query('INSERT INTO cart(user_id) VALUES ($1)', [userId]);
-      cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
-    }
-    const cartId = cart.rows[0].cart_id;
-    // Check if item already exists
-    const existing = await db.query(
-      'SELECT * FROM cart_items WHERE cart_id = $1 AND product_id = $2',
-      [cartId, productId]
-    );
-    if (existing.rows.length > 0) {
-      // Update quantity
-      await db.query(
-        'UPDATE cart_items SET quantity = quantity + $1 WHERE cart_id = $2 AND product_id = $3',
-        [quantity, cartId, productId]
-      );
-    } else {
-      // Insert new item
-      await db.query(
-        'INSERT INTO cart_items(cart_id, product_id, quantity) VALUES ($1, $2, $3)',
-        [cartId, productId, quantity]
-      );
+    const [cart,created] = await Cart.findOrCreate({
+      attributes : ['cartId'],
+      where : { userId : id},
+      defaults: {
+        userId: id
+      }
+    });
+
+    const existingItem = await CartItem.findOne({
+      where : {
+        cartId: cart.cartId,
+        productId: productId
+      }
+    });
+    if(existingItem){
+      existingItem.quantity += quantity;
+      await existingItem.save();
+    }else{
+      await CartItem.create({
+        cartId : cart.cartId,
+        productId : productId,
+        quantity: quantity,
+        size : size
+      })
     }
     res.json({ message: 'Item added to cart' });
   } catch (err) {
@@ -61,18 +79,19 @@ const addToCart = async (req, res) => {
 
 // Remove item from cart
 const removeFromCart = async (req, res) => {
-  const userId = req.user.userId;
+  const id = req.user.userId;
   const { itemId } = req.params;
   try {
-    let cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
-    if (cart.rows.length === 0) {
-      return res.status(404).json({ message: 'Cart not found' });
-    }
-    const cartId = cart.rows[0].cart_id;
-    await db.query(
-      'DELETE FROM cart_items WHERE cart_id = $1 AND cart_item_id = $2',
-      [cartId, itemId]
-    );
+    const cart = await Cart.findOne({
+      attributes : ['cartId'],
+      where : {userId : id}
+    })
+    await CartItem.destroy({
+      where : {
+        cartId : cart.cartId,
+        cartItemId : itemId
+      }
+    })
     res.json({ message: 'Item removed from cart' });
   } catch (err) {
     console.error(err);
@@ -82,19 +101,34 @@ const removeFromCart = async (req, res) => {
 
 // Update cart item quantity
 const updateCartItem = async (req, res) => {
-  const userId = req.user.userId;
+  const id = req.user.userId;
   const { itemId } = req.params;
+  const { size } = req.body;
   const { quantity } = req.body;
   try {
-    let cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
-    if (cart.rows.length === 0) {
-      return res.status(404).json({ message: 'Cart not found' });
+    const cart = await Cart.findOne({
+      attributes : ['cartId'],
+      where : {
+        userId : id
+      }
+    })
+
+    const cartItem = await CartItem.findOne({
+      where: {
+        cartId: cart.cartId,
+        cartItemId: itemId
+      }
+    })
+    if(!cartItem){
+      return res.status(404).json({ message: 'Cart item not found' });
     }
-    const cartId = cart.rows[0].cart_id;
-    await db.query(
-      'UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND cart_item_id = $3',
-      [quantity, cartId, itemId]
-    );
+    if(size){
+      cartItem.size = size;
+    }
+    if(quantity){
+      existing.quantity = quantity;
+    }
+    await existing.save();
     res.json({ message: 'Cart item updated' });
   } catch (err) {
     console.error(err);
@@ -104,14 +138,21 @@ const updateCartItem = async (req, res) => {
 
 // Clear cart
 const clearCart = async (req, res) => {
-  const userId = req.user.userId;
+  const id = req.user.userId;
   try {
-    let cart = await db.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
-    if (cart.rows.length === 0) {
+    const cart = await Cart.findOne({
+      attributes : ['cartId'],
+      where : { userId : id}
+    })
+    if(!cart){
       return res.status(404).json({ message: 'Cart not found' });
+    }else{
+      await CartItem.destroy({
+        where : {
+          cartId : cart.cartId
+        }
+      })
     }
-    const cartId = cart.rows[0].cart_id;
-    await db.query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
     res.json({ message: 'Cart cleared' });
   } catch (err) {
     console.error(err);

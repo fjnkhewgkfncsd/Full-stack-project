@@ -1,7 +1,7 @@
 import {OAuth2Client} from 'google-auth-library';
 import dotenv from 'dotenv';
 dotenv.config();
-import User from '../models/User.js'
+import User from '../models/main.js'
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import {generateAccessToken,generateRefreshToken} from '../utils/auth_helper.js'
@@ -20,9 +20,9 @@ const authenWithgoogle =  async (req,res) => {
         const payload = ticket.getPayload();
         const {sub,email,name,picture} = payload; 
 
-        const user = await User.findOne({
+        let user = await User.findOne({
             where : {
-                Useremail : email
+                userEmail : email
             }
         })
         if(!user){
@@ -44,13 +44,13 @@ const authenWithgoogle =  async (req,res) => {
         }
         );
         
-        res.cookie('token', jwtToken, {
+        res.cookie('access_token', jwtToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'Lax',
             maxAge : 24 * 60 * 60 * 1000, // 1 day
-
         });
+        res.json({ message: 'Google authentication successful', user: { id: user.userId, email: user.userEmail } });
     }catch(err){
         console.error('Error during Google authentication:', err);
         res.status(401).json({error: 'Invalid Google Token'});
@@ -63,7 +63,7 @@ const login = async (req, res) => {
     try {
     const user = await User.findOne({ where: { userEmail: email } });
 
-    if (!result) {
+    if (!user) {
         return res.status(403).json({ message: 'User not found' });
     }
 
@@ -74,8 +74,8 @@ const login = async (req, res) => {
     }
 
     // ✅ Generate tokens
-    const accessToken = generateAccessToken(result.userId);
-    const refreshToken = generateRefreshToken(result.userId);
+    const accessToken = generateAccessToken(user.userId);
+    const refreshToken = generateRefreshToken(user.userId);
 
     // ✅ Send tokens in cookies
     res.cookie('access_token', accessToken, {
@@ -119,7 +119,7 @@ const refreshToken = (req, res) => {
 };
 
 const getProfile = async (req,res) => {
-    const token = req.cookies.token;
+    const token = req.cookies.access_token;
     if(!token){
         return res.status(401).json({error: 'Unauthorized'});
     }
@@ -137,7 +137,8 @@ const getProfile = async (req,res) => {
 }
 
 const logout = (req,res) => {
-    res.clearCookie('token');
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
     res.status(200).json({message: 'Logged out successfully'});
 }
 

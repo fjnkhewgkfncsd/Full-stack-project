@@ -1,7 +1,7 @@
 import sequelize from '../config/db.js'
 import { DataTypes } from 'sequelize';
 
-const shipemnt = sequelize.define('shipments', {
+const shipment = sequelize.define('shipments', {
     shipmentId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -44,4 +44,4 @@ const shipemnt = sequelize.define('shipments', {
     updatedAt: 'updated_at'
 });
 
-export default shipemnt;
+export default shipment;

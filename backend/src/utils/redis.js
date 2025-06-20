@@ -14,7 +14,7 @@ redisClient.on('error', (err) => {
 
 const setCache = async (Key,value,expireTime = 3600) => {
     try {
-        await redisClient.set(Key,JSON.stringify(value),
+        await redisClient.set(Key,value,
             {
                 EX: expireTime, // Set expiration time in seconds
                 NX: true // Only set the key if it does not already exist
@@ -24,5 +24,6 @@ const setCache = async (Key,value,expireTime = 3600) => {
         console.error('error setting cache :',error)
     }
 }
+
 
 export {redisClient, setCache};

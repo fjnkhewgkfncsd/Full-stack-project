@@ -1,10 +1,10 @@
-import {Cart, CartItem, product, ProductSize} from '../models/main.js' 
+import {Cart, CartItem, Product, ProductSize} from '../models/main.js' 
 
 // Fetch current user's cart with items
 const getCart = async (req, res) => {
   const Id = req.user.userId;
   try {
-    const cart = await Cart.findAll(
+    const cart = await Cart.findOne(
       {
         attributes : {
           exclude : ['createdAt', 'updatedAt']
@@ -19,7 +19,7 @@ const getCart = async (req, res) => {
           },
             include : [
               {
-                model : product,
+                model : Product,
                 as : 'products',
                 attributes: {
                   exclude : ['createdAt', 'updatedAt','description', 'categoryId']
@@ -103,32 +103,33 @@ const removeFromCart = async (req, res) => {
 const updateCartItem = async (req, res) => {
   const id = req.user.userId;
   const { itemId } = req.params;
-  const { size } = req.body;
-  const { quantity } = req.body;
+  const { size,quantity } = req.body;
   try {
     const cart = await Cart.findOne({
       attributes : ['cartId'],
       where : {
         userId : id
+      },
+      include : {
+        model : CartItem,
+        as : 'items',
+        attributes: {
+          exclude: ['createdAt', 'updatedAt']
+        },
+        where: {
+          cartItemId: itemId
+        }
       }
     })
-
-    const cartItem = await CartItem.findOne({
-      where: {
-        cartId: cart.cartId,
-        cartItemId: itemId
-      }
-    })
-    if(!cartItem){
+    if (!cart || !cart.items || cart.items.length === 0) {
       return res.status(404).json({ message: 'Cart item not found' });
     }
-    if(size){
-      cartItem.size = size;
-    }
-    if(quantity){
-      existing.quantity = quantity;
-    }
-    await existing.save();
+    const cartItem = cart.items[0];
+
+    if (size) cartItem.size = size;
+    if (quantity) cartItem.quantity = quantity;
+
+    await cartItem.save();
     res.json({ message: 'Cart item updated' });
   } catch (err) {
     console.error(err);
@@ -160,7 +161,7 @@ const clearCart = async (req, res) => {
   }
 };
 
-module.exports = {
+export  {
   getCart,
   addToCart,
   removeFromCart,

@@ -23,6 +23,11 @@ const products = sequelize.define('products',{
         allowNull : false,
         field : 'price'
     },
+    region : {
+        type : DataTypes.STRING,
+        allowNull : false,
+        field : 'region'
+    },
     team : {
         type : DataTypes.STRING,
         allowNull : false,

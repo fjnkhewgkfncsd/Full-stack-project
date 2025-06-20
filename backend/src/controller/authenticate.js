@@ -1,7 +1,7 @@
 import {OAuth2Client} from 'google-auth-library';
 import dotenv from 'dotenv';
 dotenv.config();
-import User from '../models/main.js'
+import {User} from '../models/main.js'
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import {generateAccessToken,generateRefreshToken} from '../utils/auth_helper.js'

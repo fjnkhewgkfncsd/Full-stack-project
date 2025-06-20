@@ -2,10 +2,12 @@ import { Cart, CartItem, Product, Order, OrderItem } from '../models/main.js';
 
 const checkout = async (req, res) => {
   const userId = req.user.userId;
-
   try {
     // 1. Get user's cart
     const cart = await Cart.findOne({
+      attributes : {
+        exclude : ['createdAt', 'updatedAt']
+      },
       where: { userId },
       include: [{
         model: CartItem,

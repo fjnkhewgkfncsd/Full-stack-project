@@ -32,7 +32,7 @@ const OrderItem = sequelize.define('order_items',{
         field : 'size'
     },
     quantity : {
-        type : DataTypes>INTEGER,
+        type : DataTypes.INTEGER,
         allowNull : false,
         field : 'quantity'
     }

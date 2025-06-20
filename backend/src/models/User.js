@@ -44,13 +44,7 @@ const User  = sequelize.define('User',{
         type : DataTypes.STRING,
         allowNull : true,
         field : 'address'
-    },
-    userRole : {
-        type : DataTypes.STRING,
-        allowNull : false,
-        defaultValue : 'user',
-        field : 'role'
-    },
+    }
 },
 {
     tableName : 'Users',

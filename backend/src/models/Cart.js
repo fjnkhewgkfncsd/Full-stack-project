@@ -1,4 +1,4 @@
-import Sequelize from 'config/db.js';
+import Sequelize from '../config/db.js';
 import { DataTypes } from 'sequelize';
 
 const Cart = Sequelize.define('Cart', {

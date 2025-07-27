@@ -1,5 +1,5 @@
-import express from 'express';
-import  authenticateToken  from '../middleware/authMiddleware.js';
+// import express from 'express';
+// import  authenticateToken  from '../middleware/authMiddleware.js';
 // import {
 //   createOrder,
 //   getOrders,
@@ -7,8 +7,7 @@ import  authenticateToken  from '../middleware/authMiddleware.js';
 //   updateOrderStatus
 // } from '../controller/order.js';
 
-const router = express.Router();
-// Handles creating a new order.
+// const router = express.Router();
 // router.post('/', authenticateToken, createOrder);
 // // Handles retrieving all orders for the authenticated user.
 // router.get('/', authenticateToken, getOrders);
@@ -17,4 +16,4 @@ const router = express.Router();
 // // Handles updating the status of an order by its ID. Example statuses could be 'pending', 'shipped', 'delivered', etc.
 // router.put('/:orderId/status', authenticateToken, updateOrderStatus);
 
-export default router;
+// export default router;

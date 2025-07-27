@@ -11,6 +11,7 @@ import { X } from "lucide-react"
 import {ErrorBoundary} from 'react-error-boundary';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom"
+import FavPanel from '../components/favPanel.jsx';
 
 const Header = () => {
   const [isDropdownOpen, setDropDownOpen] = useState(false)
@@ -20,6 +21,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [isLog, setIsLog] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isFavOpen, setIsFavOpen] = useState(false)
   const navigate = useNavigate();
   const handleMouseEnter = () => {
     clearTimeout(timeOut.current)
@@ -71,6 +73,14 @@ const Header = () => {
     setIsCartOpen(!isCartOpen)
   }
 
+const handleClickOnFav = () => {
+  setIsFavOpen(!isFavOpen)
+}
+
+const handleCloseFav = () => {
+  setIsFavOpen(false)
+}
+
   const handleCloseCart = () => {
     setIsCartOpen(false)
   }
@@ -102,7 +112,7 @@ const Header = () => {
               <Link to='/'>Home</Link>
             </li>
             <li className="hover:text-blue-500">
-              <Link >Shop</Link>
+              <Link to='/shop'>Shop</Link>
             </li>
             <li className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
               <div className="flex gap-1/2 items-center">
@@ -254,11 +264,11 @@ const Header = () => {
           <button className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
             <img src={Notification || "/placeholder.svg"} alt="" className="w-6 h-6" />
           </button>
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
+          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer" onClick={handleClickOnFav}>
             <img src={Heart || "/placeholder.svg"} alt="" className="w-6 h-6" />
           </button>
           {isLog ? (
-            <Link className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Link to='/account' className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <img src={Account || "/placeholder.svg"} alt="account" className="w-6 h-6" />
             </Link>
           ) : (
@@ -272,6 +282,10 @@ const Header = () => {
       {/* Cart Panel */}
       <ErrorBoundary fallback={<div>Something went wrong in your cart.</div>}>
         <CartPanel isOpen={isCartOpen} onClose={handleCloseCart} />
+      </ErrorBoundary>
+      {/* Fav Panel */}
+      <ErrorBoundary fallback={<div>Something went wrong in your wishlist.</div>}>
+        <FavPanel isOpen={isFavOpen} onClose={handleCloseFav} />
       </ErrorBoundary>
     </div>
   )

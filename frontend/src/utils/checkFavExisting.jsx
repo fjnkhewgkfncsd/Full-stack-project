@@ -6,103 +6,117 @@ import {cacheFav,removeFav} from './cacheFav'
 const CheckFavExisting = (productID) => {
     const [isFavorited,setIsFavorited] = useState(false)
     const [loading,setloading] = useState(false);
-    const [errorFav,setError] = useState(null);
-    const user = authCookies.getUser();
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    useEffect( () => {
+        const checkIsLoggedIn = async () => {
+            try {
+                const res = await axios.get('http://localhost:5000/api/auth/profile', { withCredentials: true });
+                setIsLoggedIn(res.data.isLogged);
+            } catch (error) {
+                console.error("Error checking login status:", error);
+                setIsLoggedIn(false);
+            }
+        }
+        checkIsLoggedIn();
+    })
     useEffect(
         () => {
             const checkFav = async () => {
-                if(!user){
-                    const cacheKey = `fav_${productID}`
+                if(!isLoggedIn){
+                    const cacheKey = `favItems`
+                    let array = [];
                     const cached =localStorage.getItem(cacheKey)
-                    setIsFavorited(!!cached)
+                    if(cached){
+                        array = JSON.parse(cached);
+                    }
+                    if(array.includes(productID)){
+                        setIsFavorited(true);
+                        return;
+                    }
                     return;
                 }
                 try {
                     setloading(true);
-                    const res = await axios.get(`http://localhost:5000/api/favorites/${user.id}/${productID}`,
-                        {
-                            headers : {
-                                'Authorization' : `Bearer ${user.token}`,
-                                'Content-Type' : 'application/json',
-                            },
-                            withCredentials : true
-                        }
-                    )
+                    const res = await axios.get(`http://localhost:5000/api/favorites/product/${productID}`,{withCredentials : true })
                     if(res.data.success){
                         setIsFavorited(true);
                         return;
                     }else{
                         setIsFavorited(false);
-                        setError(res.data.error);
                         return;
                     }
                 } catch (error) {
                     console.error('error checking favorite :', error)
-                    setError(error.message);
                     setIsFavorited(false);
-                    if(error.res?.status === 401){
-                        authCookies.clearAuth();
-                    }
                 }finally{
                     setloading(false);
                 }
             }
             checkFav();
-        }, [user?.id, productID]
+        },[productID, isLoggedIn]
     )
 
     const togglefav = async () => {
-        console.log(isFavorited)
-        if(!user){
-            const cacheKey = `fav_${productID}`
+        let loggedIn = false;
+        try {
+            const res = await axios.get('http://localhost:5000/api/auth/profile', {
+                withCredentials: true
+            });
+            loggedIn = !!res.data.isLogged;
+            setIsLoggedIn(loggedIn);
+        } catch {
+            loggedIn = false;
+            setIsLoggedIn(false);
+        }
+        if(!loggedIn){
+            console.log('add to cache')
+            const cacheKey = `favItems`
             if(isFavorited){
+                let array = [];
+                const cached = localStorage.getItem(cacheKey);
+                if(cached){
+                    array = JSON.parse(cached);
+                    array = array.filter(item => item !== productID);
+                }
                 removeFav(cacheKey)
+                localStorage.setItem(cacheKey, JSON.stringify(array));
                 setIsFavorited(false);
                 return;
             }else{
-                cacheFav(cacheKey,productID);
+                let array = [];
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    try {
+                        array = JSON.parse(cached);
+                        if (!Array.isArray(array)) array = [];
+                    } catch {
+                        array = [];
+                    }
+                }
+                array.push(productID);
+                cacheFav(cacheKey, productID);
+                localStorage.setItem(cacheKey, JSON.stringify(array));
                 setIsFavorited(true);
                 return;
             }
         }
         try {
+            console.log('add to db')
             setloading(true)
             if(isFavorited){
-                const res = await axios.delete(
-                    `http://localhost:5000/api/favorites/${user.id}/${productID}`,
-                    {
-                        headers : {
-                            'Authorization' : `Bearer ${user.token}`,
-                            'Content-Type' : 'application/json',
-                        },
-                        withCredentials : true
-                    }
-                )
+                const res = await axios.delete(`http://localhost:5000/api/favorites/${productID}`,{ withCredentials: true });
                 if(res.data.success){
                     setIsFavorited(false)
                 }
             }else{
                 const res = await axios.post(
-                    `http://localhost:5000/api/favorites`,
-                    {
-                        user_id : user.id,
-                        product_id : productID
-                    },
-                    {
-                        headers : {
-                            'Authorization' : `Bearer ${user.token}`,
-                            'Content-Type ' : 'application/json',
-                        },
-                        withCredentials : true
-                    }
-                )
+                    `http://localhost:5000/api/favorites/${productID}`,{},{withCredentials : true})
                 if(res.data.success){
                     setIsFavorited(true)
                 }
             }
         } catch (error) {
-            setError(error.message)
             if(error.res?.status === 401){
                 authCookies.clearAuth();
             }
@@ -113,9 +127,7 @@ const CheckFavExisting = (productID) => {
     return {
         isFavExisting : isFavorited,
         loadingFavorites : loading,
-        errorFav,
-        togglefav,
-        user
+        togglefav
     }
 }
 

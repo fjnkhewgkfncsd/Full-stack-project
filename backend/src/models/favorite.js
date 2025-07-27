@@ -28,6 +28,6 @@ const favorite = sequelize.define('favorite', {
 }, 
 {
     tableName: 'favorites',
-    timestamps: true,
+    timestamps: false,
 });
 export default favorite;

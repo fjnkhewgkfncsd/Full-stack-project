@@ -5,8 +5,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 import authenRoute from './src/routes/authRoutes.js'
 import cartRoutes from './src/routes/cartRoutes.js';
-import orderRoutes from './src/routes/orderRoutes.js';
+// import orderRoutes from './src/routes/orderRoutes.js';
 import productRoutes from './src/routes/productRoutes.js';
+import favoriteRoutes from './src/routes/favRoutes.js';
 
 const app = express();
 
@@ -20,7 +21,8 @@ app.use(cookieParser());
 
 app.use('/api/auth', authenRoute);
 app.use('/api/cart', cartRoutes);
-app.use('/api/order', orderRoutes);
+// app.use('/api/order', orderRoutes);
 app.use('/api/products',productRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 export default app;

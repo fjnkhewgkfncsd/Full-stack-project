@@ -131,13 +131,11 @@ const removeFromCart = async (req, res) => {
   const id = req.user.userId;
   const { itemId } = req.params;
   const { size, quantity } = req.body;
-  console.log('id:', id ," itemId:",itemId, " size:",size, " quantity:", quantity);
   try {
     const cart = await Cart.findOne({
       attributes : ['cartId'],
       where : {userId : Number(id)}
     })
-    console.log('Cart found:', cart);
     await CartItem.destroy({
       where : {
         cartId : cart.cartId,
@@ -149,12 +147,12 @@ const removeFromCart = async (req, res) => {
     res.json({
       message: 'Item removed from cart',
       success: true
-     });
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error removing from cart',
     success: false
-     });
+    });
   }
 };
 

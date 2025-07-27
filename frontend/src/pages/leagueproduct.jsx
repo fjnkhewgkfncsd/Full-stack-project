@@ -2,6 +2,8 @@ import {useParams} from 'react-router-dom';
 import {useState,useEffect} from 'react';
 import axios from 'axios';
 import Card from '../components/card.jsx';
+import {Plus} from 'lucide-react';
+import {scrollToTop} from '../utils/skullToTop.jsx'
 
 const LeagueProduct = () => {
     const [products, setProducts] = useState([]);
@@ -49,10 +51,12 @@ const LeagueProduct = () => {
     )
 
     const handleClickPageNumber = (page) => {
+        scrollToTop();
         setCurrentPage(page);
         fetchProductsByLeague(league, page);
     }
     const handleClickNext = () => {
+        scrollToTop();
         fetchProductsByLeague(league, currentPage + 1)
         setCurrentPage(currentPage + 1)
     }
@@ -76,13 +80,22 @@ const LeagueProduct = () => {
                     <p>No products found.</p>
                 )}
             </div>
-            <div className='space-x-4 mb-16'>
-                {totalPages > 1 && 
-                    Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-                        <button key={pageNumber} onClick={() => handleClickPageNumber(pageNumber)} className={`bg-gray-300 cursor-pointer hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded ${currentPage === pageNumber ? 'bg-gray-400' : ''}`}>{pageNumber}</button>
-                    ))
+            <div className='flex space-x-8 items-center justify-center mb-16'>
+                {totalPages > 1 &&
+                (
+                    <div className='flex space-x-4'>
+                        <div className='space-x-4'>
+                        {totalPages > 1 && 
+                            Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                                <button key={pageNumber} onClick={() => handleClickPageNumber(pageNumber)} className={`bg-gray-300 cursor-pointer hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded ${currentPage === pageNumber ? 'bg-gray-400' : ''}`}>{pageNumber}</button>
+                            ))
+                        }
+                    </div>
+                    <button className='bg-gray-300 cursor-pointer hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded justify-start' onClick={() => handleClickNext()}>Next</button>
+                    </div>)
                 }
             </div>
+            
         </div>
     )
 }

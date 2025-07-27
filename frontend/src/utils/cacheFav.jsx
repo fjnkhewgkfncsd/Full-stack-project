@@ -1,18 +1,19 @@
 export const cacheFav = (cacheKey,id) => {
-    console.log('Caching favorite with key:', cacheKey, 'and id:', id);
-    localStorage.setItem(cacheKey,JSON.stringify(id))
-}
-
-export const getFav = (cacheKey) => {
+    let array = [];
     const cached = localStorage.getItem(cacheKey);
     if(cached){
-        console.log('Cache hit for key:', cacheKey);
-        return JSON.parse(cached)
+        array = JSON.parse(cached);
     }
-    return null;
+    array.push(id);
+    localStorage.setItem(cacheKey,JSON.stringify(array))
 }
 
-export const removeFav = (cacheKey) => {
-    console.log('Removing favorite with key:', cacheKey);
-    localStorage.removeItem(cacheKey);
+export const removeFav = (cacheKey,id) => {
+    let array = [];
+    const cached = localStorage.getItem(cacheKey);
+    if(cached){
+        array = JSON.parse(cached);
+    }
+    array = array.filter(item => item !== id);
+    localStorage.setItem(cacheKey,JSON.stringify(array));
 }

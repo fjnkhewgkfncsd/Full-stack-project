@@ -131,24 +131,14 @@ const refreshToken = (req, res) => {
 };
 
 const getProfile = async (req,res) => {
-    let token = req.cookies.access_token;
-    if(!token && req.headers.authorization?.startsWith('Bearer ')){
-        token = req.headers.authorization.split(' ')[1];
-    }
-    if(!token){
-        return res.status(401).json({
-            error: 'Unauthorized',
-            success: false,
-            isLogged: false
-        });
-    }
+    const id = req.user.userId;
     try {
-        const decode = jwt.verify(token,process.env.JWT_SECRET);
         const user = await User.findOne({
             where : {
-                userId : decode.userId
+                userId : id
             }
         });
+        console.log('User found:1', user ? user.toJSON() : 'No user found');
         res.status(200).json({
             data : user,
             success : true,

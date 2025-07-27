@@ -7,10 +7,11 @@ import heart from '../asset/icon/heart.png';
 import checkFavExisting from '../utils/checkFavExisting.jsx'
 import {addCartToCache,checkIfCartExisting,updateCartInCache} from '../utils/cacheCart.jsx'
 import RelativeProduct from '../pages/relativeProduct.jsx'
+import { scrollToTop } from '../utils/skullToTop.jsx';
 const Product = () => {
     const {id} = useParams();
     const [clickDown,setClickDown] = useState(true)
-    const {isFavExisting,loadingFavorites,errorFav,togglefav} = checkFavExisting(id)
+    const {isFavExisting,loadingFavorites,togglefav} = checkFavExisting(id)
     const [loadingCartAdding,setLoadingCartAdding] = useState(false);
     const [islogged,setIslogged] = useState(false);
     const [order,setOrder] = useState({
@@ -22,6 +23,7 @@ const Product = () => {
         name : ''
     })
     useEffect(() => {
+        scrollToTop();
         CheckIsLoggedByLocalStorage();
     })
     const CheckIsLoggedByLocalStorage = () => {

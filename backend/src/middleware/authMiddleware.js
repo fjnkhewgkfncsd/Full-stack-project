@@ -5,6 +5,7 @@ const AuthenticatedMiddleware = (req, res, next) => {
     let token = null;
     if (req.cookies?.access_token) {
         token = req.cookies.access_token;
+        console.log('Token from cookies:', token);
     } else if (
         req.headers.authorization &&
         req.headers.authorization.startsWith('Bearer ')
@@ -12,6 +13,7 @@ const AuthenticatedMiddleware = (req, res, next) => {
         token = req.headers.authorization.split(' ')[1];
     }
     if(!token){
+        console.log('No token provided');
         return res.status(401).json({
             error : 'Authentication token is required',
             success: false,

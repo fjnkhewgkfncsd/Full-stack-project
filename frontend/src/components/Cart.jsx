@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import axios from "axios"
 import { X, ShoppingBag } from "lucide-react"
 import { Trash2 } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 
 const Cart = ({ isOpen, onClose }) => {
@@ -12,7 +13,7 @@ const Cart = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isCartEmpty, setIsCartEmpty] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-
+  const navigate = useNavigate();
   useEffect(() => {
   if (isOpen) {
     (async () => {
@@ -208,7 +209,6 @@ useEffect(() => {
             data: { size, quantity },
             withCredentials: true
           });
-        console.log('hello');
         if (res.data.success) {
           console.log("Cart item removed successfully");
           await fetchCartItems(); // Fetch updated cart items
@@ -290,8 +290,7 @@ useEffect(() => {
                 <p className="text-gray-600 mb-8">Check out our latest arrivals stay up-to-date with latest styles</p>
                 <h3 className="text-xl font-semibold mb-4">Start shopping</h3>
                 <div className="space-y-3 w-full">
-                  <button className="w-full py-3 bg-black text-white font-medium">Shop women</button>
-                  <button className="w-full py-3 bg-black text-white font-medium">Shop men</button>
+                  <button className="w-full py-3 bg-black text-white font-medium" onClick={() => navigate('/shop')}>Shop with us now</button>
                 </div>
               </div>
             ) : (

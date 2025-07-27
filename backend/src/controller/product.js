@@ -275,4 +275,57 @@ const getProductsByLeague = async (req,res) => {
         });
     }
 }
-export { getNationalJersey,getProductById,getRelativeProducts,getProductByTeam,getTeamPicture,getProductsByLeague };
+
+const getProducts = async (req, res) => {
+    const { limit = 12, page = 1 } = req.query;
+    const cacheKey = `products_limit${limit}_page${page}`;
+    try {
+        const totalCount = await Product.count();
+        const cached = await redisClient.get(cacheKey);
+        if(cached){
+            console.log('cached products from redis');
+            return res.status(200).json({
+                success:true,
+                data:JSON.parse(cached),
+                cached:true,
+                totalCount: totalCount,
+                message:'Products fetched successfully'
+            });
+        }
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const products = await Product.findAll({
+            attributes: {
+                exclude: ['createdAt', 'updatedAt']
+            },
+            limit: parseInt(limit),
+            offset: offset
+        });
+        if(products.length === 0){
+            return res.status(404).json({
+                success: false,
+                data: [],
+                message: 'No products found',
+                cached:false,
+                totalCount: 0
+            });
+        }
+        await setCache(cacheKey,JSON.stringify(products),3600);
+        res.status(200).json({
+            success:true,
+            data:products,
+            cached:false,
+            totalCount: totalCount,
+            message:'Products fetched successfully'
+        });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching products',
+            error: error.message,
+            data: [],
+            totalCount: 0
+        });
+    }
+}
+export { getNationalJersey,getProductById,getRelativeProducts,getProductByTeam,getTeamPicture,getProductsByLeague,getProducts };

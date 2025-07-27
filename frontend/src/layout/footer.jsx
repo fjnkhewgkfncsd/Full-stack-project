@@ -6,7 +6,7 @@ import Phone from '../asset/icon/phone-call-svgrepo-com.svg'
 import Mail from '../asset/icon/mail-alt-svgrepo-com.svg'
 const Footer = () => {
     return (
-        <footer className='flex justify-around items-start w-full bg-white h-full shadow-sm pb-8'>
+        <footer className='flex justify-around items-start w-full bg-white h-full shadow-sm pb-8 pt-8'>
             <img className='w-64 h-32' src="https://res.cloudinary.com/dwlbowgx5/image/upload/f_webp/v1749055998/Screenshot_2025-06-04_234408_ham0kp" alt="" />
             <div className='space-y-8'>
                 <h1 className='text-2xl font-semibold font-serif'>Follow Us</h1>

@@ -13,14 +13,14 @@ const Cart = Sequelize.define('Cart', {
         allowNull: false,
         field: 'user_id',
         references: {
-            model: 'users', // This references the users table
+            model: 'Users', // This references the users table
             key: 'user_id'
         },
         unique: true // As per your SQL schema
     },
 }, {
     tableName: 'cart', // Explicitly set the table name
-    timestamps: true, // We're manually handling the created_at field
+    timestamps: false, // We're manually handling the created_at field
     underscored: true // If you want Sequelize to automatically map camelCase to snake_case
 });
 

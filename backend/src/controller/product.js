@@ -1,7 +1,8 @@
 import { QueryTypes } from 'sequelize';
 import sequelize from '../config/db.js';  // ✅ Import sequelize from config
-import { Product,ProductSize } from '../models/main.js';  // ✅ Import Product model
+import { Product,ProductSize,Banner } from '../models/main.js';  // ✅ Import Product model
 import {redisClient,setCache} from '../utils/redis.js'
+
 
 const getNationalJersey = async (req, res) => {
     try {
@@ -82,4 +83,196 @@ const getProductById = async (req,res) => {
     }
 }
 
-export { getNationalJersey,getProductById };
+const getRelativeProducts = async (req,res) => {
+    const {team} = req.params;
+    const cacheKey = `relativeProducts:${team}`;
+    try {
+        const cached = await redisClient.get(cacheKey);
+        if(cached){
+            console.log('cached relative products from redis')
+            return res.status(200).json({
+                cached : true,
+                data : JSON.parse(cached),
+                success : true
+            })
+        }
+        const relativeProducts = await Product.findAll({
+            where : { team },
+            attributes : {
+                exclude : ['createdAt','updatedAt']
+            }
+        })
+        if(relativeProducts.length === 0){
+            return res.status(404).json({
+                message : 'No relative products found',
+                success : false,
+                cached : false
+            })
+        }
+        await setCache(cacheKey,JSON.stringify(relativeProducts),3600);
+        res.status(200).json({
+            data : relativeProducts,
+            success : true,
+            cached : false 
+        })
+    } catch (error) {
+        console.error('error fetching relative products:',error);
+        return res.status(500).json({
+            message : 'error fetching relative products',
+            error : error.message,
+            success : false
+        })
+    }
+}
+
+const getProductByTeam = async (req, res) => {
+    const {team} = req.params;
+    const cacheKey = `productsByTeam:${team}`;
+    try {
+        const cached = await redisClient.get(cacheKey);
+        if(cached){
+            console.log(`cached products for team ${team} from redis`);
+            return res.status(200).json({
+                success:true,
+                data:JSON.parse(cached),
+                cached:true,
+                message:`Products for team ${team} fetched successfully`
+            })
+        }
+        const products = await Product.findAll({
+            where : {team},
+            attributes: {
+                exclude: ['createdAt', 'updatedAt']
+            }
+        })
+        if(products.length == 0){
+            return res.status(404).json({
+                success: false,
+                data: [],
+                message: `No products found for team ${team}`,
+                cached:false
+            })
+        }
+        await setCache(cacheKey,JSON.stringify(products),3600);
+        res.status(200).json({
+            success:true,
+            data:products,
+            cached:false,
+            message:`Products for team ${team} fetched successfully`
+        })
+    } catch (error) {
+        console.error('Error fetching products by team:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching products',
+            error: error.message
+        });
+    }
+} 
+
+const getTeamPicture = async (req, res) => {
+    const {team} =req.params;
+    const cacheKey = `productPicture:${team}`;
+    try {
+        const cached = await redisClient.get(cacheKey);
+        if(cached){
+            return res.status(200).json({
+                success:true,
+                data:JSON.parse(cached),
+                cached:true,
+                message:`Team picture for ${team} fetched successfully`
+            })
+        }
+        const teamPicture = await Banner.findOne({
+            where: { team: team },
+            attributes: ['imageUrl']
+        });
+        if(!teamPicture){
+            return res.status(404).json({
+                success: false,
+                message: `No picture found for team ${team}`,
+                cached:false
+            });
+        }
+        await setCache(cacheKey,JSON.stringify(teamPicture),3600);
+        res.status(200).json({
+            success:true,
+            data:teamPicture,
+            cached:false,
+            message:`Team picture for ${team} fetched successfully`
+        });
+    } catch (error) {
+        console.error('Error fetching team picture:', error);
+        return res.status(500).json({
+            success:false,
+            message:'Error fetching team picture',
+            error:error.message
+        });
+    }
+}
+const getProductsByLeague = async (req,res) => {
+    const {league} = req.params;
+    const { limit = 12, page = 1 } = req.query;
+    const cacheKey = `league_${league}_product_limit${limit}_page${page}`;
+    const cachetotalKey = `league_${league}_product_count`;
+    try {
+        const cached = await redisClient.get(cacheKey);
+        const cachedTotal = await redisClient.get(cachetotalKey);
+        let totalCount = 0;
+        if(cachedTotal){
+            totalCount = JSON.parse(cachedTotal);
+        }else{
+            const totalProducts = await Product.count({
+                where: { league }
+            });
+            totalCount = totalProducts;
+            await redisClient.set(cachetotalKey, JSON.stringify(totalCount),3600);
+        }
+        if(cached){
+            console.log(`cached products for league ${league} from redis`);
+            return res.status(200).json({
+                success:true,
+                data:JSON.parse(cached),
+                cached:true,
+                message:`Products for league ${league} fetched successfully`,
+                totalCount: totalCount
+            })
+        }
+
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const products = await Product.findAll({
+            where : { league},
+            attributes: {
+                exclude: ['createdAt', 'updatedAt']
+            },
+            limit: parseInt(limit),
+            offset: offset
+        })
+        if(products.length === 0){
+            return res.status(404).json({
+                success: false,
+                data: [],
+                message: `No products found for league ${league}`,
+                cached:false
+            });
+        }
+        await setCache(cacheKey,JSON.stringify(products),3600);
+        res.status(200).json({
+            success:true,
+            data:products,
+            cached:false,
+            message:`Products for league ${league} fetched successfully`,
+            totalCount: totalCount
+        });
+    } catch (error) {
+        console.error('Error fetching products by league:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching products',
+            error: error.message,
+            data: [],
+            totalCount: 0
+        });
+    }
+}
+export { getNationalJersey,getProductById,getRelativeProducts,getProductByTeam,getTeamPicture,getProductsByLeague };

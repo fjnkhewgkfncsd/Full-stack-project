@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { authenWithgoogle,getProfile,logout,login,refreshToken} from '../controller/authenticate.js'
+import { authenWithgoogle,getProfile,logout,login,refreshToken,register} from '../controller/authenticate.js'
 
 //google authentication
 router.post('/googleAuthentication', authenWithgoogle);
@@ -12,5 +12,7 @@ router.get('/logout', logout);
 router.post('/login', login);
 //refresh token
 router.post('/refreshToken', refreshToken);
+//register
+router.post('/register', register);
 
 export default router;

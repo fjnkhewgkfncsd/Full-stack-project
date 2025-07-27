@@ -6,7 +6,7 @@ export const EuporeTeam = [
     },
     {
         url : 'https://res.cloudinary.com/dwlbowgx5/image/upload/v1749398166/Borussia_Dortmund_logo_lt0bhw.svg',
-        Team : 'Borussia_Dortmund',
+        Team : 'borussia_dortmund',
         alt : 'Borussia Dortmund'
     },
     {

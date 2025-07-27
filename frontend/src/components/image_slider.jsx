@@ -47,7 +47,7 @@ const SliderImage = ({list, Card}) => {
     }
     
     return (
-        <div className='w-screen flex items-start'>
+        <div className='w-screen flex items-start mt-8'>
             <div className='flex items-center justify-center w-full h-full'>
                 <button 
                     className='w-12 h-12 hover:bg-gray-200 rounded-full transition-colors duration-300' 

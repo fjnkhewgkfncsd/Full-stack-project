@@ -10,6 +10,7 @@ import OrderItem from './orderItems.js';
 import Payment from './payments.js';
 import Shipment from './shipments.js';
 import Notification from './notifications.js';
+import Banner from './Banner.js';
 
 // ✅ CATEGORY - PRODUCT (One-to-Many)
 Category.hasMany(Product, { foreignKey: 'category_id', as: 'products' });
@@ -72,5 +73,6 @@ export {
   OrderItem,
   Payment,
   Shipment,
-  Notification
+  Notification,
+  Banner
 };

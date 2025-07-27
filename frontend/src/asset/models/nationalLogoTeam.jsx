@@ -5,9 +5,9 @@ const NationalTeam = [
         alt : 'Argentina Team'
     },
     {
-        Team : 'brizal',
+        Team : 'brazil',
         url : 'https://res.cloudinary.com/dwlbowgx5/image/upload/v1749884357/Brazilian_Football_Confederation_logo_nub0yd.svg',
-        alt : 'brizal Team'
+        alt : 'brazil Team'
     },
     {
         Team : 'france',
@@ -25,7 +25,7 @@ const NationalTeam = [
         alt : 'spain team' 
     },
     {
-        Team : 'us',
+        Team : 'usa',
         url : 'https://res.cloudinary.com/dwlbowgx5/image/upload/v1749884308/United_States_Soccer_Federation_logo_2016_d3yhal.svg',
         alt : 'Us team'
     },
@@ -68,6 +68,11 @@ const NationalTeam = [
         Team : 'jordan',
         url : 'https://res.cloudinary.com/dwlbowgx5/image/upload/v1749884486/Jordan_national_football_team_logo_2024_xnheaa.svg',
         alt : 'Jordan Team'
+    },
+    {
+        Team : 'germany',
+        url : 'https://res.cloudinary.com/dwlbowgx5/image/upload/v1753294163/DFBEagle_ilgfw2.svg',
+        alt : 'Germany Team'
     }
 ]
 

@@ -5,7 +5,9 @@ import {
   getCart,
   removeFromCart,
   updateCartItem,
-  clearCart
+  clearCart,
+  insertFromLocalStorageToDb,
+  updateCartItemSize
 } from '../controller/cart.js';
 
 const router = express.Router();
@@ -16,9 +18,13 @@ router.get('/', authenticateToken, getCart);
 // Remove from cart
 router.delete('/remove/:itemId', authenticateToken, removeFromCart);
 // Update cart item quantity
-router.put('/update/:itemId', authenticateToken, updateCartItem);
+router.put('/update/:itemID',authenticateToken, updateCartItem);
 // Clear cart
 router.delete('/clear', authenticateToken, clearCart);
+
+router.post('/insert', authenticateToken, insertFromLocalStorageToDb);
+
+router.put('/update/size/:itemID',authenticateToken, updateCartItemSize);
 
 export default router;
 

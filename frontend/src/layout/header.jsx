@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef,useEffect } from "react"
 import { Link } from "react-router-dom"
 import Cart from "../asset/icon/cart-icon.svg"
 import Account from "../asset/icon/account-icon.svg"
@@ -8,6 +8,9 @@ import Heart from "../asset/icon/heart.svg"
 import Notification from "../asset/icon/notification.svg"
 import CartPanel from "../components/Cart.jsx"
 import { X } from "lucide-react"
+import {ErrorBoundary} from 'react-error-boundary';
+import axios from 'axios';
+import { useNavigate } from "react-router-dom"
 
 const Header = () => {
   const [isDropdownOpen, setDropDownOpen] = useState(false)
@@ -15,14 +18,38 @@ const Header = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [isLog, setIsLog] = useState(true)
+  const [isLog, setIsLog] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false)
-
+  const navigate = useNavigate();
   const handleMouseEnter = () => {
     clearTimeout(timeOut.current)
     setDropDownOpen(true)
   }
 
+  useEffect(() => {
+    getIsloggedIn();
+    const handleAuthChange = () => {
+      getIsloggedIn();
+    };
+    window.addEventListener('authchange', handleAuthChange);
+    return () => window.removeEventListener('authchange', handleAuthChange);
+  }, []);
+
+  const getIsloggedIn = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/auth/profile', {withCredentials: true});
+      if(res.data.isLogged){
+        setIsLog(true);
+        localStorage.setItem('isLoggedIn', 'true');
+      } else {
+        setIsLog(false);
+        localStorage.removeItem('isLoggedIn');
+      }
+    } catch {
+      setIsLog(false);
+      localStorage.removeItem('isLoggedIn');
+    }
+  };
   const handleMouseLeave = () => {
     timeOut.current = setTimeout(() => {
       setDropDownOpen(false)
@@ -49,7 +76,11 @@ const Header = () => {
   }
 
   const handleClickAccount = () => {
-    setIsAccountOpen(true)
+    if(isLog){
+      setIsAccountOpen(true)
+    }else{
+      navigate("/login");
+    }
   }
 
   const handleClearSearch = () => {
@@ -68,10 +99,10 @@ const Header = () => {
         <nav className="w-1/5">
           <ul className="flex items-center justify-between w-full gap-6 font-semibold font-sans text-xl">
             <li className="hover:text-blue-500">
-              <Link>Home</Link>
+              <Link to='/'>Home</Link>
             </li>
             <li className="hover:text-blue-500">
-              <Link>Shop</Link>
+              <Link >Shop</Link>
             </li>
             <li className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
               <div className="flex gap-1/2 items-center">
@@ -106,16 +137,16 @@ const Header = () => {
                           {[
                             "FC Barcelona",
                             "Real Madrid",
-                            "Bayern Munich",
+                            "FC Bayern Munich",
                             "Inter Milan",
-                            "Man City",
-                            "Liverpool F.C",
-                            "Manchester United F.C",
-                            "Chelsea F.C",
+                            "Manchester City",
+                            "Liverpool FC",
+                            "Manchester United",
+                            "Chelsea FC",
                           ].map((club) => (
                             <li key={club}>
                               <Link
-                                to={`/club/${club.toLowerCase().replace(/\s+/g, "-")}`}
+                                to={`/team/${club.toLowerCase().replace(/\s+/g, "_")}`}
                                 className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm"
                                 onClick={handleClickOnDropDown}
                               >
@@ -133,7 +164,7 @@ const Header = () => {
                             (country) => (
                               <li key={country}>
                                 <Link
-                                  to={`/national/${country.toLowerCase()}`}
+                                  to={`/team/${country.toLowerCase()}`}
                                   className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm"
                                   onClick={handleClickOnDropDown}
                                 >
@@ -151,7 +182,7 @@ const Header = () => {
                           {["Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1"].map((league) => (
                             <li key={league}>
                               <Link
-                                to={`/league/${league.toLowerCase().replace(/\s+/g, "-")}`}
+                                to={`/league/${league.toLowerCase().replace(/\s+/g, "_")}`}
                                 className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm"
                                 onClick={handleClickOnDropDown}
                               >
@@ -231,7 +262,7 @@ const Header = () => {
               <img src={Account || "/placeholder.svg"} alt="account" className="w-6 h-6" />
             </Link>
           ) : (
-            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" onClick={() => navigate("/login")}>
               Login
             </button>
           )}
@@ -239,7 +270,9 @@ const Header = () => {
       </header>
 
       {/* Cart Panel */}
-      <CartPanel isOpen={isCartOpen} onClose={handleCloseCart} />
+      <ErrorBoundary fallback={<div>Something went wrong in your cart.</div>}>
+        <CartPanel isOpen={isCartOpen} onClose={handleCloseCart} />
+      </ErrorBoundary>
     </div>
   )
 }

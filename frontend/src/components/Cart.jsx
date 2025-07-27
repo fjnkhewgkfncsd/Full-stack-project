@@ -3,128 +3,260 @@
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { X, ShoppingBag } from "lucide-react"
+import { Trash2 } from 'lucide-react';
+
 
 const Cart = ({ isOpen, onClose }) => {
   const [cartItem, setCartItem] = useState([])
   const [totalPrice, setTotalPrice] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isCartEmpty, setIsCartEmpty] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    if (isOpen) {
-      fetchCartItems()
+  if (isOpen) {
+    (async () => {
+      await checkIsLoggedIn();
+    })();
+  }
+}, [isOpen]);
+
+useEffect(() => {
+  if(cartItem.length > 0){
+    const total = calculateTotalPrice(cartItem);
+    setTotalPrice(total);
+  }
+}, [cartItem]);
+
+useEffect(() => {
+  if (isOpen) {
+    if (isLoggedIn) {
+      (async () => await insertFromLocalStorageToDb())();
+      fetchCartItems();
+    } else {
+      fetchcartItemFromLocalStorage();
     }
-  }, [isOpen])
+  }
+}, [isOpen, isLoggedIn]);
 
   const fetchCartItems = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/cart", { withCredentials: true })
-      if (response.status === 200) {
-        const items = response.data.cart?.items || response.data.items || []
-        setCartItem(items)
-        const total = calculateTotalPrice(items)
-        setTotalPrice(total)
+      const response = await axios.get("http://localhost:5000/api/cart/", { withCredentials: true })
+      if (response.data.success) {
+        const items = response.data.data || [];
+        const cartItems = items.map(item => ({
+          cartItemId: item.cartItemId,
+          product_id: item.productId, // use productId from cart item
+          size: item.size,
+          quantity: item.quantity,
+          image_url: item.product?.image_url,
+          name: item.product?.product_name, // use product_name
+          price: item.product?.price,
+        }));
+        setCartItem(cartItems);
         setIsCartEmpty(items.length === 0)
+      }else{
+        setIsCartEmpty(true)
+        setCartItem([]);
       }
+
     } catch (error) {
       console.error("Error fetching cart items:", error)
     } finally {
       setIsLoading(false)
     }
   }
+  
+  const insertFromLocalStorageToDb = async () => {
+    const cacheKey = 'cartItems';
+    const cachedItems = localStorage.getItem(cacheKey);
+    let items = [];
+    if(cachedItems){
+      items = JSON.parse(cachedItems);
+      try {
+        const res = await axios.post('http://localhost:5000/api/cart/insert',{
+          items:items
+        },
+        {
+          withCredentials: true,
+        })
+        if(res.status === 200){
+          localStorage.removeItem(cacheKey);
+        }
+      } catch (error) {
+        console.error("Error inserting cart items to DB:", error)
+      }
+    }
+  }
+  const fetchcartItemFromLocalStorage = () => {
+    try {
+      const cachedKey = 'cartItems';
+      const cachedItems = localStorage.getItem(cachedKey);
+      if (cachedItems) {
+        setCartItem(Array.isArray(JSON.parse(cachedItems)) ? JSON.parse(cachedItems) : []);
+        setIsCartEmpty(false);
+        const total = calculateTotalPrice(JSON.parse(cachedItems));
+        setTotalPrice(total);
+        console.log('Cart items fetched from local storage:', JSON.parse(cachedItems));
+      }else{
+        setIsCartEmpty(true);
+        setCartItem([]);
+        console.log('No cart items found in local storage');
+      }
+    } catch (error) {
+      console.error("Error fetching cart items from local storage:", error)
+    }
+  }
+  const checkIsLoggedIn = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/auth/profile", { withCredentials: true })
+      if(!response.data.isLogged){
+        setIsLoggedIn(false)
+      }else{
+        setIsLoggedIn(true)
+      }
+    } catch (error) {
+      console.error("Error checking login status:", error)
+    }
+  }
 
   const calculateTotalPrice = (items) => {
     return items.reduce((total, item) => {
-      return total + item.product.price * item.quantity
+      return total + Number(item.price) * item.quantity
     }, 0)
   }
 
-  const updateCartItemQuantity = async (itemID, quantity) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5000/api/cart/update/${itemID}`,
-        {
-          quantity,
-        },
-        {
-          withCredentials: true,
-        },
-      )
-      if (response.status === 200) {
-        const updatedItems = cartItem.map((item) => {
-          if (item.cartItemId === itemID) {
-            return {
-              ...item,
-              quantity: quantity,
-            }
-          }
-          return item
-        })
-        setCartItem(updatedItems)
-        setTotalPrice(calculateTotalPrice(updatedItems))
-      }
-    } catch (error) {
-      console.error("Error updating cart item:", error)
-    }
-  }
-
-  const updateCartItemSize = async (itemId, size) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5000/api/cart/update/${itemId}`,
-        { size },
-        {
-          withCredentials: true,
-        },
-      )
-      if (response.status === 200) {
-        setCartItem((prevItems) =>
-          prevItems.map((item) => {
-            if (item.cartItemId === itemId) {
-              return {
-                ...item,
-                size: size,
-              }
-            }
-            return item
-          }),
+  const updateCartItemQuantity = async (itemID, quantity,oldQuantity,size) => {
+    if(isLoggedIn && quantity === oldQuantity) return; // No need to update if quantity is the same
+    if(isLoggedIn){
+      try {
+        const response = await axios.put(
+          `http://localhost:5000/api/cart/update/${itemID}`,
+          {
+            quantity,
+            size
+          },
+          {
+            withCredentials: true,
+          },
         )
+        if (response.status === 200) {
+            await fetchCartItems(); // Fetch updated cart items
+        }
+      } catch (error) {
+        console.error("Error updating cart item:", error)
       }
-    } catch (error) {
-      console.error("Error updating cart item size:", error)
-    }
-  }
-
-  const removeCartItem = async (itemId) => {
-    try {
-      const response = await axios.delete(`http://localhost:5000/api/cart/remove/${itemId}`, { withCredentials: true })
-      if (response.status === 200) {
-        const updatedItems = cartItem.filter((item) => item.cartItemId !== itemId)
-        setCartItem(updatedItems)
-        setTotalPrice(calculateTotalPrice(updatedItems))
-        if (updatedItems.length === 0) {
-          setIsCartEmpty(true)
+    }else{
+      const cacheKey = 'cartItems';
+      const cached = localStorage.getItem(cacheKey);
+      if(cached){
+        const cartArray = JSON.parse(cached);
+        const existingIndex = cartArray.findIndex(item => item.product_id === itemID && item.size === size && item.quantity === oldQuantity);
+        if(existingIndex !== -1){
+          cartArray[existingIndex].quantity = quantity;
+          localStorage.setItem(cacheKey, JSON.stringify(cartArray));
+          setCartItem(cartArray);
         }
       }
-    } catch (error) {
-      console.error("Error removing cart item:", error)
     }
   }
 
-  const clearCart = async () => {
-    try {
-      const response = await axios.delete("http://localhost:5000/api/cart/clear", { withCredentials: true })
-      if (response.status === 200) {
-        setCartItem([])
-        setTotalPrice(0)
-        setIsCartEmpty(true)
+  const updateCartItemSize = async (itemID, size,oldSize) => {
+    if(size === oldSize) return; // No need to update if size is the same
+    if(isLoggedIn){
+      try {
+        const response = await axios.put(
+          `http://localhost:5000/api/cart/update/size/${itemID}`,
+          { size,
+            oldSize
+          },
+          {
+            withCredentials: true,
+          },
+        )
+        if (response.status === 200) {
+          await fetchCartItems(); 
+        }
+      } catch (error) {
+        console.error("Error updating cart item size:", error)
       }
-    } catch (error) {
-      console.error("Error clearing cart:", error)
+    }else{
+      const cacheKey = 'cartItems';
+      const cached = localStorage.getItem(cacheKey);
+      let cartArray = [];
+      if(cached){
+        cartArray = JSON.parse(cached);
+      }
+      const exitingExistingIndex = cartArray.findIndex(
+        item => item.product_id === itemID && item.size === oldSize
+      )
+      console.log('exitingExistingIndex', exitingExistingIndex)
+      if(exitingExistingIndex !== -1){
+        console.log('Updating size in existing cart item');
+        cartArray[exitingExistingIndex].size = size;
+        localStorage.setItem(cacheKey, JSON.stringify(cartArray));
+        setCartItem(cartArray);
+      }
     }
   }
 
-  if (!isOpen) return null
+  const removeCartItem = async (itemId,size,quantity) => {
+    
+    if(isLoggedIn){
+      try {
+        const res = await axios.delete(`http://localhost:5000/api/cart/remove/${itemId}`, {
+            data: { size, quantity },
+            withCredentials: true
+          });
+        console.log('hello');
+        if (res.data.success) {
+          console.log("Cart item removed successfully");
+          await fetchCartItems(); // Fetch updated cart items
+        }
+      } catch (error) {
+        console.error("Error removing cart item:", error)
+      }
+    }else{
+      const cacheKey = 'cartItems';
+      const cached = localStorage.getItem(cacheKey);
+      if(cached){
+        let cartArray = [];
+        cartArray = JSON.parse(cached);
+        const existingIndex = cartArray.findIndex(
+          item => item.product_id === itemId && item.size === size && item.quantity === quantity
+        )
+        if(existingIndex !== -1){
+          cartArray.splice(existingIndex, 1);
+          localStorage.setItem(cacheKey, JSON.stringify(cartArray));
+          setCartItem(cartArray);
+          if(cartArray.length === 0){
+            setIsCartEmpty(true);
+          }
+        }
+      }
+    }
+  }
+  const clearCart = async () => {
+    if(isLoggedIn){
+      try {
+        const response = await axios.delete("http://localhost:5000/api/cart/clear", { withCredentials: true })
+        if (response.status === 200) {
+          setCartItem([])
+          setTotalPrice(0)
+          setIsCartEmpty(true)
+        }
+      } catch (error) {
+        console.error("Error clearing cart:", error)
+      }
+    }else{
+      localStorage.removeItem('cartItems');
+      setCartItem([]);
+      setTotalPrice(0);
+      setIsCartEmpty(true);
+    }
+  }
+
+  if(!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -165,33 +297,33 @@ const Cart = ({ isOpen, onClose }) => {
             ) : (
               <div className="space-y-4">
                 {cartItem.map((item) => (
-                  <div key={item.cartItemId} className="flex border-b pb-4">
-                    <div className="w-20 h-20 bg-gray-100 mr-3 flex-shrink-0">
-                      {item.product.image && (
+                  <div key={item.cartItemId||`${item.product_id}-${item.size}`} className="flex pb-4 ">
+                    <div className="w-28 h-36 bg-gray-100 mr-3 flex-shrink-0">
+                      {item.image_url && (
                         <img
-                          src={item.product.image || "/placeholder.svg"}
-                          alt={item.product.name}
+                          src={item.image_url || "/placeholder.svg"}
+                          alt={item.name}
                           className="w-full h-full object-cover"
                         />
                       )}
                     </div>
-                    <div className="flex-grow">
-                      <h3 className="font-medium">{item.product.name}</h3>
-                      <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
-
-                      {/* Size selector if applicable */}
-                      {item.size && (
+                    <div className="flex-grow space-y-2">
+                      <h3 className="font-medium">{(item.name || "Product").toUpperCase()}</h3>
+                      <p className="text-sm text-gray-500">${Number(item.price).toFixed(2)}</p>
+                      <div className='flex space-x-4'>
+                        {item.size && (
                         <div className="mt-1 flex items-center">
                           <span className="text-sm text-gray-500 mr-2">Size:</span>
                           <select
                             value={item.size}
-                            onChange={(e) => updateCartItemSize(item.cartItemId, e.target.value)}
+                            onChange={(e) => updateCartItemSize(item.product_id, e.target.value,item.size,item.quantity)}
                             className="text-sm border rounded p-1"
                           >
                             <option value="S">S</option>
                             <option value="M">M</option>
                             <option value="L">L</option>
                             <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
                           </select>
                         </div>
                       )}
@@ -201,7 +333,7 @@ const Cart = ({ isOpen, onClose }) => {
                         <span className="text-sm text-gray-500 mr-2">Qty:</span>
                         <select
                           value={item.quantity}
-                          onChange={(e) => updateCartItemQuantity(item.cartItemId, Number(e.target.value))}
+                          onChange={(e) => updateCartItemQuantity(item.product_id, Number(e.target.value),item.quantity,item.size)}
                           className="text-sm border rounded p-1"
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
@@ -210,12 +342,15 @@ const Cart = ({ isOpen, onClose }) => {
                             </option>
                           ))}
                         </select>
+                      </div>
+                      {/* Size selector if applicable */}
+                      
 
                         <button
-                          onClick={() => removeCartItem(item.cartItemId)}
+                          onClick={() => removeCartItem(item.product_id,item.size,item.quantity)}
                           className="ml-auto text-gray-500 hover:text-black text-sm underline"
                         >
-                          Remove
+                          <Trash2/>
                         </button>
                       </div>
                     </div>

@@ -1,7 +1,10 @@
 import app from './app.js';
 import sequelize from './src/config/db.js';
 import dotenv from 'dotenv';
+
+
 dotenv.config();
+
 const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     try {

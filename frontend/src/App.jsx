@@ -6,11 +6,12 @@ import Home from './pages/home.jsx'
 import './app.css'
 import Product from './pages/product.jsx'
 import TeamProducts from './pages/teamProduct.jsx';
-import LeagueProduct from './pages/leagueproduct.jsx' 
-import { scrollToTop } from './utils/skullToTop.jsx';
+import LeagueProduct from './pages/leagueproduct.jsx'; 
 import Shop from './pages/shop.jsx';
 import Account from './pages/Account.jsx';
-function App() {
+import Payment from './pages/payment.jsx'
+import PaymentSuccess from './pages/paymentsuccess.jsx'
+ function App() {
   return (
     <BrowserRouter>
       <Routes>
@@ -23,6 +24,7 @@ function App() {
           <Route path='/league/:league' element={<LeagueProduct />} />
           <Route path='/shop' element={<Shop />} />
           <Route path='/account' element={<Account />} />
+          <Route path='/payment' element={<Payment/>}/>
         </Route>
       </Routes>
     </BrowserRouter>

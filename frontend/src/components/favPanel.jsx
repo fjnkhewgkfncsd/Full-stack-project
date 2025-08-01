@@ -147,14 +147,16 @@ const Fav = ({ isOpen, onClose }) => {
                     <p className="text-gray-600 mb-8">Check out our latest arrivals stay up-to-date with latest styles</p>
                     <h3 className="text-xl font-semibold mb-4">Start shopping</h3>
                     <div className="space-y-3 w-full">
-                    <button className="w-full py-3 bg-black text-white font-medium" onClick={() => navigate('/shop')}>Shopping with us</button>
+                    <button className="w-full py-3 bg-black text-white font-medium" onClick={() => {
+                        onClose();
+                        navigate('/shop')}}>Shopping with us</button>
 
                     </div>
                 </div>
                 ) : (
-                <div className="space-y-4 border-b-1">
+                <div className="space-y-4 ">
                     {favItem.map((item) => (
-                    <div key={item.favoriteId||`${item.productId}`} className="flex pb-4 ">
+                    <div key={item.favoriteId||`${item.productId}`} className="flex pb-4 border-b-1">
                         <div className="w-28 h-36 bg-gray-100 mr-3 flex-shrink-0">
                         {item.image_url && (
                             <img
@@ -164,7 +166,7 @@ const Fav = ({ isOpen, onClose }) => {
                             />
                         )}
                         </div>
-                        <div className="flex flex-col space-y-2 pt-4">
+                        <div className="flex flex-col space-y-2 pt-4 w-60">
                         <h3 className="font-medium">{(item.name || "Product").toUpperCase()}</h3>
                         <h1 className='font-semibold text-red-500'>${item.price}</h1>
                         </div>

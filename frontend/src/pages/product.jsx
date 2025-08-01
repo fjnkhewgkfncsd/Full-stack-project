@@ -14,6 +14,7 @@ const Product = () => {
     const {isFavExisting,loadingFavorites,togglefav} = checkFavExisting(id)
     const [loadingCartAdding,setLoadingCartAdding] = useState(false);
     const [islogged,setIslogged] = useState(false);
+
     const [order,setOrder] = useState({
         product_id : id,
         size : '',
@@ -34,10 +35,11 @@ const Product = () => {
         `product_${id}`,
         async () => {
             const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+            console.log('product data:',response.data);
             if(response.data.success){
                 return response.data.data;
             }
-            throw new Error('product not fount');
+            throw new Error('product not found');
         }
     )
     if(loading){
@@ -54,6 +56,14 @@ const Product = () => {
             </div>
         )
     }
+
+    if (!product || !Array.isArray(product.sizes) || product.sizes.length === 0) {
+    return (
+        <div className="flex justify-center items-center min-h-screen">
+            <h1 className="text-2xl text-red-500">Product not found or invalid product data.</h1>
+        </div>
+    );
+}
     const handleClickSize = (size) => {
         setOrder( prevOrder => ({
             ...prevOrder,

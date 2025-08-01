@@ -44,7 +44,7 @@ const authenWithgoogle =  async (req,res) => {
         const jwtToken = jwt.sign({
             userId:user.userId
         },
-        process.env.JWT_SECRET,
+        process.env.ACCESS_TOKEN_SECRET,
         {
             expiresIn : '1d'
         }
@@ -104,6 +104,8 @@ const login = async (req, res) => {
     user: { id: user.userId, email: user.userEmail },
     isLogged: true,
     success: true
+    ,
+    token: accessToken
 });
 
     } catch (err) {
@@ -113,11 +115,19 @@ const login = async (req, res) => {
 };
 
 const refreshToken = (req, res) => {
-    const token = req.cookies.refresh_token;
-    if (!token) return res.sendStatus(401);
+    const token = req.cookies?.refresh_token;
+    if (!token) return res.status(401).json({
+        error: 'Refresh token is required',
+        success: false,
+        isLogged: false
+    });
 
     jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.status(403),json({
+        success : false,
+        isLogged : false,
+        error : err
+    });
 
     const newAccessToken = generateAccessToken(user.userId);
     res.cookie('access_token', newAccessToken, {
@@ -126,7 +136,11 @@ const refreshToken = (req, res) => {
         sameSite: 'lax',
         maxAge: 15 * 60 * 1000
     });
-    res.json({ message: 'Token refreshed' });
+    res.json({ 
+        message: 'Token refreshed',
+        success: true,
+        isLogged : true
+    });
     });
 };
 

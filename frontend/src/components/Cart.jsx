@@ -368,7 +368,9 @@ useEffect(() => {
               </div>
 
               <div className="space-y-2">
-                <button className="w-full py-3 bg-black text-white font-medium">Checkout</button>
+                <button className="w-full py-3 bg-black text-white font-medium" onClick={() => {
+                  onClose();
+                  navigate('/payment')}}>Checkout</button>
                 <button onClick={clearCart} className="w-full py-2 text-sm text-center underline hover:no-underline">
                   Clear bag
                 </button>

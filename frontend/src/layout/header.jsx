@@ -11,6 +11,7 @@ import { X } from "lucide-react"
 import {ErrorBoundary} from 'react-error-boundary';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom"
+import {scrollToTop} from '../utils/skullToTop.jsx';
 import FavPanel from '../components/favPanel.jsx';
 
 const Header = () => {
@@ -29,12 +30,16 @@ const Header = () => {
   }
 
   useEffect(() => {
+    console.log('i was calling root')
     getIsloggedIn();
     const handleAuthChange = () => {
+      console.log('i was calling authchange')
       getIsloggedIn();
     };
     window.addEventListener('authchange', handleAuthChange);
-    return () => window.removeEventListener('authchange', handleAuthChange);
+    return () => {
+      console.log('i was calling remove')
+      window.removeEventListener('authchange', handleAuthChange);}
   }, []);
 
   const getIsloggedIn = async () => {
@@ -43,15 +48,29 @@ const Header = () => {
       if(res.data.isLogged){
         setIsLog(true);
         localStorage.setItem('isLoggedIn', 'true');
-      } else {
-        setIsLog(false);
-        localStorage.removeItem('isLoggedIn');
+      } else if(res.data.status === 401){
+        await refresh_token();
       }
     } catch {
       setIsLog(false);
       localStorage.removeItem('isLoggedIn');
     }
   };
+
+  const refresh_token = async () => {
+    try{
+      const res = await axios.post('http://localhost:5000/api/auth/refreshToken',{},{withCredentials: true});
+      if(res.data.success){
+        setIsLog(true);
+        localStorage.setItem('isLoggedIn','true')
+      }else{
+        setIsLog(false);
+        localStorage.removeItem('isLoggedIn');
+      }
+    }catch(err){
+      console.error(err);
+    }
+  }
   const handleMouseLeave = () => {
     timeOut.current = setTimeout(() => {
       setDropDownOpen(false)
@@ -272,7 +291,9 @@ const handleCloseFav = () => {
               <img src={Account || "/placeholder.svg"} alt="account" className="w-6 h-6" />
             </Link>
           ) : (
-            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" onClick={() => navigate("/login")}>
+            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" onClick={() => {
+              scrollToTop();
+              navigate("/login")}}>
               Login
             </button>
           )}

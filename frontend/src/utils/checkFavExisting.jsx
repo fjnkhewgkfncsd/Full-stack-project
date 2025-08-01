@@ -38,18 +38,22 @@ const CheckFavExisting = (productID) => {
                 }
                 try {
                     setloading(true);
-                    const res = await axios.get(`http://localhost:5000/api/favorites/product/${productID}`,{withCredentials : true })
-                    if(res.data.success){
+                    const res = await axios.get(`http://localhost:5000/api/favorites/product/${productID}`, { withCredentials: true });
+                    if (res.data.success) {
                         setIsFavorited(true);
-                        return;
-                    }else{
+                    } else {
                         setIsFavorited(false);
-                        return;
                     }
                 } catch (error) {
-                    console.error('error checking favorite :', error)
-                    setIsFavorited(false);
-                }finally{
+                    if (error.response && error.response.status === 404) {
+                        // 404 means not favorited, so just set false, don't log as error
+                        setIsFavorited(false);
+                    } else {
+                        // Only log unexpected errors
+                        console.error('error checking favorite :', error);
+                        setIsFavorited(false);
+                    }
+                } finally {
                     setloading(false);
                 }
             }
